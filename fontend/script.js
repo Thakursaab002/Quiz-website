@@ -92,9 +92,7 @@ faqItems.forEach(item => {
         item.classList.toggle('active');
     });
 });
-
 const featureCards = document.querySelectorAll('.feature-card');
-
 function checkScroll() {
     featureCards.forEach(card => {
         const cardPosition = card.getBoundingClientRect().top;
