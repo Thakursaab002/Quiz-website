@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster - Interactive Learning Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-brain"></i> QuizMaster
+            </a>
+            
+            <ul class="nav-links">
+                <li><a href="Home.html">Home</a></li>
+                <li><a href="quizzes.html">Quizzes</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            
+            <div class="auth-buttons">
+                <button class="login-btn">Login</button>
+                <button class="signup-btn">Sign Up</button>
+                <button class="dark-mode-toggle" id="darkModeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            
+            <button class="hamburger" id="hamburger">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+    <section class="hero">
+        <div class="container hero-content">
+            <h1>Test Your Knowledge with <span>Interactive</span> Quizzes</h1>
+            <p>Join thousands of users who are expanding their knowledge and having fun with our engaging quiz platform.</p>
+            <div class="hero-buttons">
+                <button class="cta-primary">Start Quiz Now</button>
+                <button class="cta-secondary">Learn More</button>
+            </div>
+        </div>
+    </section>
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose QuizMaster</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Huge Question Bank</h3>
+                    <p>Access thousands of questions across various categories and difficulty levels.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Detailed Analytics</h3>
+                    <p>Track your progress with detailed performance reports and insights.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure Platform</h3>
+                    <p>Your data is safe with our secure authentication and privacy measures.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Sign Up</h3>
+                    <p>Create your free account in less than a minute.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="step-number">2</div>
+                    <h3>Choose Quiz</h3>
+                    <p>Select from various categories and difficulty levels.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="step-number">3</div>
+                    <h3>Answer Questions</h3>
+                    <p>Test your knowledge with interactive questions.</p>
+                </div>
+                
+                <div class="step">
+                    <div class="step-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="step-number">4</div>
+                    <h3>View Results</h3>
+                    <p>Get immediate feedback and detailed explanations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">What Our Users Say</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <img src="https://randomuser.me/api/portraits/women/43.jpg" alt="User" class="testimonial-avatar">
+                        <div>
+                            <div class="testimonial-name">Sarah Johnson</div>
+                            <div class="testimonial-role">Teacher</div>
+                        </div>
+                    </div>
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>"QuizMaster has transformed how I test my students' knowledge. The analytics help me identify areas where they need improvement."</p>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" class="testimonial-avatar">
+                        <div>
+                            <div class="testimonial-name">Michael Chen</div>
+                            <div class="testimonial-role">Software Engineer</div>
+                        </div>
+                    </div>
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p>"I use QuizMaster to keep my skills sharp. The programming quizzes are challenging and up-to-date with the latest technologies."</p>
+                </div>
+                
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="User" class="testimonial-avatar">
+                        <div>
+                            <div class="testimonial-name">Emma Rodriguez</div>
+                            <div class="testimonial-role">Medical Student</div>
+                        </div>
+                    </div>
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p>"The anatomy and medicine quizzes have been invaluable for my studies. I've improved my test scores significantly since using QuizMaster."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Test Your Knowledge?</h2>
+            <p>Join thousands of users who are expanding their knowledge and having fun with our engaging quiz platform.</p>
+            <button class="cta-big">Join Now, It's Free!</button>
+        </div>
+    </section>
+    <section class="faq">
+        <div class="container">
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is QuizMaster completely free to use?
+                        <div class="faq-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, QuizMaster offers a free plan with access to all basic features and a wide range of quizzes. We also offer a premium plan with additional features like advanced analytics and ad-free experience.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I create my own quizzes?
+                        <div class="faq-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely! With a free account, you can create up to 5 custom quizzes. Premium users can create unlimited quizzes and share them with the community.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How often is new content added?
+                        <div class="faq-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We add new quizzes and questions every week across all categories. Our content team works constantly to ensure our question bank stays fresh and up-to-date.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I use QuizMaster on my mobile device?
+                        <div class="faq-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, QuizMaster is fully responsive and works perfectly on all devices including smartphones, tablets, and desktops. We also have mobile apps for iOS and Android.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <a href="#" class="footer-logo">QuizMaster</a>
+                    <p class="footer-description">Interactive quizzes to boost your knowledge and have fun while learning.</p>
+                    <div class="social-icons">
+                        <a href="https://x.com/SushantThakur02"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.linkedin.com/in/sushant-thakur08/"><i class="fab fa-linkedin"></i></a>
+                        <a href=""><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="footer-heading">Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">Quizzes</a></li>
+                        <li><a href="#">Leaderboard</a></li>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="footer-heading">Categories</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Science & Technology</a></li>
+                        <li><a href="#">History & Geography</a></li>
+                        <li><a href="#">Arts & Literature</a></li>
+                        <li><a href="#">Sports & Entertainment</a></li>
+                        <li><a href="#">Programming & IT</a></li>
+                    </ul>
+                </div>
+            </div> 
+            <div class="copyright">
+                &copy; 2025 QuizMaster. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
