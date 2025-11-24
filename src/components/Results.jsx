@@ -35,4 +35,5 @@ const Results = ({ score, userAnswers, onRestart }) => {
   )
 }
 
+
 export default Results
