@@ -13,7 +13,6 @@ import ProgressPage from "./components/ProgressPage";
 import Homepage from './components/HomePage';
 import Quiz from './components/Quiz';
 import Flashcards from './components/Flashcards';
-import Resources from './components/Resources';
 
 import { getCurrentUser, logoutUser } from './authUtils';
 import './App.css';
@@ -76,7 +75,7 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
 
-            {/* PROTECTED USER ROUTES */}
+            {}
             <Route 
               path="/profile" 
               element={
@@ -97,7 +96,6 @@ function App() {
             {/* MAIN FEATURES */}
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/flashcards" element={<Flashcards />} />
-            <Route path="/resources" element={<Resources />} />
           </Routes>
         </div>
       </Router>
