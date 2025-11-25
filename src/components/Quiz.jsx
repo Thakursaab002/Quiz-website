@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+// removed Link import because we're doing full-page redirects
+
 import {
   Zap,
   BookOpen,
@@ -14,9 +16,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-// --- Configuration ---
+// --- Quiz Configuration ---
 
-// OpenTDB categories: https://opentdb.com/api_config.php
 const CATEGORIES = [
   {
     id: 17,
@@ -54,8 +55,127 @@ const QUESTION_COUNTS = [5, 10, 15];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const TIME_PER_QUESTION = 15; // seconds
 
+// --- Progress storage config (NEW) ---
+
+const PROGRESS_STORAGE_KEY = "studyhub_quiz_sessions";
+
+const saveQuizSession = (session) => {
+  try {
+    const existing = JSON.parse(
+      localStorage.getItem(PROGRESS_STORAGE_KEY) || "[]"
+    );
+    existing.push(session);
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(existing));
+  } catch (e) {
+    console.error("Failed to save quiz session:", e);
+  }
+};
+
+// --- Flashcards Configuration ---
+
+const FLASHCARD_SETS = [
+  {
+    id: "java",
+    title: "Java & OOP",
+    subtitle: "Core concepts for interviews",
+    accent: "from-amber-400 to-orange-500",
+    cards: [
+      {
+        front: "What is polymorphism in OOP?",
+        back: "The ability of a single interface to represent different underlying forms (implementations). In Java, this is mainly achieved through method overriding and interfaces.",
+      },
+      {
+        front: "What is encapsulation?",
+        back: "Encapsulation is bundling data and methods that operate on that data within a single unit (class) and restricting direct access to some of the object's components.",
+      },
+      {
+        front: "What is the JVM?",
+        back: "The Java Virtual Machine is an abstract computing machine that enables a computer to run Java programs by converting bytecode into machine-specific instructions.",
+      },
+      {
+        front: "Difference between abstract class and interface?",
+        back: "Abstract class: can have state, non-abstract methods, and constructors. Interface: focuses on behavior contracts; in modern Java can have default and static methods but no instance state.",
+      },
+    ],
+  },
+  {
+    id: "dsa",
+    title: "Data Structures & Algorithms",
+    subtitle: "Must-know concepts",
+    accent: "from-cyan-400 to-blue-500",
+    cards: [
+      {
+        front: "Time complexity of binary search?",
+        back: "O(log n) because the search space is halved on each step.",
+      },
+      {
+        front: "What is a hash table?",
+        back: "A data structure that stores key–value pairs and uses a hash function to compute an index into an array of buckets for O(1) average insertion and lookup.",
+      },
+      {
+        front: "Stack vs Queue?",
+        back: "Stack: LIFO (Last In First Out). Queue: FIFO (First In First Out).",
+      },
+      {
+        front: "What is dynamic programming?",
+        back: "A technique for solving problems by breaking them into overlapping subproblems and storing results to avoid recomputation.",
+      },
+    ],
+  },
+  {
+    id: "cs",
+    title: "CS Fundamentals",
+    subtitle: "OS, DBMS, Networks basics",
+    accent: "from-violet-400 to-fuchsia-500",
+    cards: [
+      {
+        front: "What is a process in OS?",
+        back: "A process is a running instance of a program, including its code, data, and execution context.",
+      },
+      {
+        front: "What is normalization in DBMS?",
+        back: "Process of structuring data to reduce redundancy and improve integrity, typically using normal forms (1NF, 2NF, 3NF, BCNF...).",
+      },
+      {
+        front: "Difference between TCP and UDP?",
+        back: "TCP is connection-oriented, reliable, and ordered. UDP is connectionless, faster, but does not guarantee delivery or order.",
+      },
+      {
+        front: "What is a deadlock?",
+        back: "A situation where a set of processes are blocked because each process holds a resource and waits for another resource held by some other process.",
+      },
+    ],
+  },
+  {
+    id: "gk",
+    title: "General Knowledge",
+    subtitle: "Just for fun & curiosity",
+    accent: "from-emerald-400 to-teal-500",
+    cards: [
+      {
+        front: "Which is the largest planet in our solar system?",
+        back: "Jupiter.",
+      },
+      {
+        front: "Who wrote 'The Origin of Species'?",
+        back: "Charles Darwin.",
+      },
+      {
+        front: "What is the capital of Japan?",
+        back: "Tokyo.",
+      },
+      {
+        front: "Which gas do plants primarily absorb for photosynthesis?",
+        back: "Carbon dioxide (CO₂).",
+      },
+    ],
+  },
+];
+
 // --- Utilities ---
+
 const decodeHTML = (html) => {
+  if (typeof document === "undefined") return html;
   const txt = document.createElement("textarea");
   txt.innerHTML = html;
   return txt.value;
@@ -70,9 +190,9 @@ const shuffle = (array) => {
   return arr;
 };
 
-// --- UI Components ---
+// --- Shared UI Components ---
 
-const NavButton = ({ icon, label, active, onClick }) => (
+const NavButton = ({ icon, label, active, onClick = () => {} }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
@@ -86,11 +206,15 @@ const NavButton = ({ icon, label, active, onClick }) => (
   </button>
 );
 
-// Top navbar
 const Navbar = ({ currentScreen, onNavigate }) => {
-  const isQuizActive = ["setup", "countdown", "intro-loading", "quiz", "result"].includes(
-    currentScreen
-  );
+  const isQuizActive = [
+    "setup",
+    "countdown",
+    "intro-loading",
+    "quiz",
+    "result",
+  ].includes(currentScreen);
+  const isFlashcardsActive = currentScreen === "flashcards";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 backdrop-blur-md bg-[#0a0a12]/80 border-b border-white/5">
@@ -107,22 +231,52 @@ const Navbar = ({ currentScreen, onNavigate }) => {
       </div>
 
       <div className="hidden md:flex items-center bg-white/5 rounded-full px-2 py-1 border border-white/10 backdrop-blur-xl">
+        {/* Internal quiz screen navigation */}
         <NavButton
           active={isQuizActive}
           icon={<Play size={16} />}
           label="Quiz"
           onClick={() => onNavigate("setup")}
         />
-        <NavButton icon={<BookOpen size={16} />} label="Flashcards" />
-        <NavButton icon={<BarChart2 size={16} />} label="Progress" />
-        <NavButton icon={<User size={16} />} label="Profile" />
+        <NavButton
+          active={isFlashcardsActive}
+          icon={<BookOpen size={16} />}
+          label="Flashcards"
+          onClick={() => onNavigate("flashcards")}
+        />
+
+        {/* FULL PAGE REDIRECTS */}
+        <NavButton
+          icon={<BarChart2 size={16} />}
+          label="Progress"
+          onClick={() => {
+            window.location.href = "/progress";
+          }}
+        />
+        <NavButton
+          icon={<User size={16} />}
+          label="Profile"
+          onClick={() => {
+            window.location.href = "/profile";
+          }}
+        />
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="hidden md:block px-5 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors">
+        <button
+          onClick={() => {
+            window.location.href = "/login";
+          }}
+          className="hidden md:block px-5 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+        >
           Login
         </button>
-        <button className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50">
+        <button
+          onClick={() => {
+            window.location.href = "/signup";
+          }}
+          className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+        >
           Sign Up
         </button>
       </div>
@@ -130,7 +284,7 @@ const Navbar = ({ currentScreen, onNavigate }) => {
   );
 };
 
-// 3D hover card
+// 3D tilt card
 const Card3D = ({ children, className = "" }) => {
   const cardRef = useRef(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -164,31 +318,40 @@ const Card3D = ({ children, className = "" }) => {
   );
 };
 
-// --- Main App ---
+// --- Main App (Quiz + Flashcards screen machine) ---
 
 function App() {
-  // screens: setup → countdown → intro-loading → quiz → result
+  // screens: setup, countdown, intro-loading, quiz, result, flashcards
   const [screen, setScreen] = useState("setup");
 
+  // quiz config
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [questionCount, setQuestionCount] = useState(10);
   const [difficulty, setDifficulty] = useState("Medium");
 
+  // quiz runtime state
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(TIME_PER_QUESTION);
   const [timerId, setTimerId] = useState(null);
   const [userAnswers, setUserAnswers] = useState([]);
   const [countdown, setCountdown] = useState(3);
 
+  // flashcards state
+  const [activeFlashSetId, setActiveFlashSetId] = useState(
+    FLASHCARD_SETS[0].id
+  );
+  const [flashCardIndex, setFlashCardIndex] = useState(0);
+  const [flashFlipped, setFlashFlipped] = useState(false);
+
   const currentQuestion = questions[currentIdx];
 
-  // Reset everything except config (category, difficulty, count)
-  const resetState = () => {
+  // --- Navigation ---
+
+  const resetQuizState = () => {
     setQuestions([]);
     setCurrentIdx(0);
     setScore(0);
@@ -205,18 +368,23 @@ function App() {
   const handleNavigate = (targetScreen) => {
     if (targetScreen === "setup") {
       if (timerId) clearInterval(timerId);
-      resetState();
+      resetQuizState();
       setScreen("setup");
+    } else if (targetScreen === "flashcards") {
+      if (timerId) clearInterval(timerId);
+      setScreen("flashcards");
     }
   };
 
+  // --- Quiz Logic ---
+
   const handleStartQuiz = () => {
     if (!selectedCategory) return;
-    resetState();
+    resetQuizState();
     setScreen("countdown");
   };
 
-  // Countdown logic
+  // countdown
   useEffect(() => {
     if (screen !== "countdown") return;
     if (countdown < 0) {
@@ -227,14 +395,14 @@ function App() {
     return () => clearTimeout(id);
   }, [screen, countdown]);
 
-  // Fetch questions from OpenTDB
+  // fetch questions
   useEffect(() => {
     if (screen !== "intro-loading") return;
 
     const fetchQuestions = async () => {
       setIsLoading(true);
       try {
-        const difficultyParam = difficulty.toLowerCase(); // easy|medium|hard
+        const difficultyParam = difficulty.toLowerCase();
         const url = `https://opentdb.com/api.php?amount=${questionCount}&category=${selectedCategory}&difficulty=${difficultyParam}&type=multiple`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("API Error");
@@ -255,8 +423,9 @@ function App() {
         } else {
           throw new Error("No results");
         }
+        // eslint-disable-next-line no-unused-vars
       } catch (err) {
-        // fallback questions
+        // fallback
         setQuestions([
           {
             question: "What is the speed of light?",
@@ -287,7 +456,22 @@ function App() {
     fetchQuestions();
   }, [screen, questionCount, selectedCategory, difficulty]);
 
-  // Timer logic
+  const handleTimeUp = useCallback(() => {
+    if (answered || !currentQuestion) return;
+    setAnswered(true);
+    setUserAnswers((prev) => [
+      ...prev,
+      {
+        question: currentQuestion.question,
+        userAnswer: null,
+        correctAnswer: currentQuestion.correct,
+        isCorrect: false,
+        timeUp: true,
+      },
+    ]);
+  }, [answered, currentQuestion]);
+
+  // Timer Effect
   useEffect(() => {
     if (screen !== "quiz" || !currentQuestion) return;
     if (timerId) clearInterval(timerId);
@@ -305,24 +489,8 @@ function App() {
     }, 1000);
     setTimerId(id);
     return () => clearInterval(id);
-  }, [screen, currentIdx, currentQuestion?.question]);
+  }, [screen, currentIdx, currentQuestion?.question, handleTimeUp]);
 
-  const handleTimeUp = useCallback(() => {
-    if (answered || !currentQuestion) return;
-    setAnswered(true);
-    setUserAnswers((prev) => [
-      ...prev,
-      {
-        question: currentQuestion.question,
-        userAnswer: null,
-        correctAnswer: currentQuestion.correct,
-        isCorrect: false,
-        timeUp: true,
-      },
-    ]);
-  }, [answered, currentQuestion]);
-
-  // Save answer but DON'T show correctness yet
   const handleSelectAnswer = (answer) => {
     if (answered) return;
     if (timerId) clearInterval(timerId);
@@ -341,9 +509,39 @@ function App() {
     ]);
   };
 
+  // *** UPDATED: save session when finishing quiz ***
   const handleNext = () => {
     if (!answered) return;
-    if (currentIdx + 1 >= questions.length) {
+
+    const isLastQuestion = currentIdx + 1 >= questions.length;
+
+    if (isLastQuestion) {
+      // Build session summary
+      const categoryName =
+        CATEGORIES.find((c) => c.id === selectedCategory)?.name || "Unknown";
+
+      const totalQuestions = questions.length;
+      const correct = score;
+      const incorrect = totalQuestions - correct;
+      const percentage =
+        totalQuestions > 0
+          ? Math.round((correct / totalQuestions) * 100)
+          : 0;
+
+      const session = {
+        id: Date.now(), // simple unique id
+        timestamp: new Date().toISOString(),
+        categoryId: selectedCategory,
+        categoryName,
+        difficulty,
+        totalQuestions,
+        correct,
+        incorrect,
+        percentage,
+      };
+
+      saveQuizSession(session);
+
       setScreen("result");
     } else {
       setCurrentIdx(currentIdx + 1);
@@ -352,11 +550,38 @@ function App() {
     }
   };
 
+  // --- Flashcards logic ---
+
+  const activeFlashSet =
+    FLASHCARD_SETS.find((s) => s.id === activeFlashSetId) || FLASHCARD_SETS[0];
+
+  useEffect(() => {
+    setFlashCardIndex(0);
+    setFlashFlipped(false);
+  }, [activeFlashSetId]);
+
+  const currentFlashCard = activeFlashSet.cards[flashCardIndex];
+
+  const handleFlashFlip = () => setFlashFlipped((prev) => !prev);
+
+  const handleFlashNext = () => {
+    setFlashCardIndex((idx) =>
+      idx + 1 >= activeFlashSet.cards.length ? 0 : idx + 1
+    );
+    setFlashFlipped(false);
+  };
+
+  const handleFlashPrev = () => {
+    setFlashCardIndex((idx) =>
+      idx - 1 < 0 ? activeFlashSet.cards.length - 1 : idx - 1
+    );
+    setFlashFlipped(false);
+  };
+
   // --- Render sections ---
 
   const renderSetup = () => (
     <div className="w-full max-w-4xl mx-auto z-10 animate-fade-in px-4">
-      {/* Top badge row with Back to Home */}
       <div className="flex items-center justify-between mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1a1f36] border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
           <Sparkles size={14} className="text-cyan-400" />
@@ -365,7 +590,6 @@ function App() {
           </span>
         </div>
 
-        {/* “Back to Home” (same behaviour as going to setup/reset) */}
         <button
           onClick={() => handleNavigate("setup")}
           className="flex items-center gap-1 text-xs md:text-sm text-slate-400 hover:text-white transition-colors"
@@ -387,7 +611,7 @@ function App() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Category Selection */}
+        {/* Category */}
         <Card3D className="bg-[#121420]/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
           <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
             <span className="p-1.5 rounded bg-blue-500/20 text-blue-400">
@@ -439,10 +663,10 @@ function App() {
           </div>
         </Card3D>
 
-        {/* Difficulty + Question Count + Start */}
+        {/* Difficulty + Count */}
         <Card3D className="bg-[#121420]/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl flex flex-col justify-between">
           <div className="space-y-8">
-            {/* Difficulty Level (above Question Count) */}
+            {/* Difficulty */}
             <div>
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="p-1.5 rounded bg-emerald-500/20 text-emerald-400">
@@ -470,7 +694,7 @@ function App() {
               </div>
             </div>
 
-            {/* Question Count (below difficulty) */}
+            {/* Question count */}
             <div>
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="p-1.5 rounded bg-purple-500/20 text-purple-400">
@@ -527,7 +751,7 @@ function App() {
 
   const renderQuiz = () => (
     <div className="w-full max-w-3xl z-10 animate-fade-in-up px-4">
-      {/* Header stats */}
+      {/* header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex flex-col gap-1">
           <span className="text-xs text-slate-500 uppercase tracking-wider font-bold">
@@ -558,13 +782,16 @@ function App() {
                 : "bg-slate-800/50 border-slate-700 text-cyan-400"
             }`}
           >
-            <Clock size={18} className={timeRemaining < 6 ? "animate-pulse" : ""} />
+            <Clock
+              size={18}
+              className={timeRemaining < 6 ? "animate-pulse" : ""}
+            />
             <span className="font-mono font-bold text-lg">{timeRemaining}s</span>
           </div>
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* progress bar */}
       <div className="w-full h-1 bg-slate-800 rounded-full mb-8 overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-cyan-400 to-blue-600 transition-all duration-500 ease-out"
@@ -572,7 +799,7 @@ function App() {
         />
       </div>
 
-      {/* Question card */}
+      {/* question card */}
       <Card3D className="bg-[#121420]/90 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
         <h2 className="text-xl md:text-2xl font-bold text-white leading-relaxed mb-8">
           {currentQuestion?.question}
@@ -615,7 +842,9 @@ function App() {
               onClick={handleNext}
               className="flex items-center gap-2 px-8 py-3 bg-white text-black rounded-full font-bold hover:bg-cyan-50 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)]"
             >
-              {currentIdx + 1 === questions.length ? "Finish Quiz" : "Next Question"}{" "}
+              {currentIdx + 1 === questions.length
+                ? "Finish Quiz"
+                : "Next Question"}{" "}
               <ArrowRight size={18} />
             </button>
           </div>
@@ -658,7 +887,6 @@ function App() {
           </div>
         </div>
 
-        {/* Detailed review (answers vs correct) */}
         <div className="max-h-64 overflow-y-auto rounded-2xl border border-slate-700 bg-slate-900/70 p-4 space-y-3 text-sm mb-8">
           {userAnswers.map((item, idx) => (
             <div
@@ -683,7 +911,8 @@ function App() {
               ) : (
                 <p className="text-xs text-rose-300">
                   ✗ Incorrect. You answered:{" "}
-                  <span className="font-semibold">{item.userAnswer}</span> • Correct:{" "}
+                  <span className="font-semibold">{item.userAnswer}</span> •
+                  Correct:{" "}
                   <span className="font-semibold text-emerald-300">
                     {item.correctAnswer}
                   </span>
@@ -697,7 +926,7 @@ function App() {
           <button
             onClick={() => {
               if (timerId) clearInterval(timerId);
-              resetState();
+              resetQuizState();
               setScreen("setup");
             }}
             className="px-8 py-3 rounded-full border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 transition-all font-semibold"
@@ -715,11 +944,182 @@ function App() {
     );
   };
 
+  // FLASHCARDS PAGE
+  const renderFlashcards = () => (
+    <div className="w-full max-w-5xl z-10 animate-fade-in-up px-4">
+      {/* header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1a1f36] border border-purple-500/40">
+            <Sparkles size={14} className="text-purple-400" />
+            <span className="text-xs font-semibold tracking-wide text-purple-100 uppercase">
+              Flashcard Mode
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-white">
+            Study with Animated Flashcards
+          </h2>
+          <p className="text-slate-400 max-w-xl text-sm md:text-base">
+            Flip through concise Q&A cards. Perfect for last-minute revision
+            before your viva, lab exam, or interview.
+          </p>
+        </div>
+
+        <div className="hidden md:flex flex-col items-end gap-1 text-right text-xs text-slate-500">
+          <span>Tip: Click the card to flip it</span>
+          <span>Use Next / Previous to navigate</span>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-[1.1fr,1.4fr] gap-8 items-stretch">
+        {/* deck selector */}
+        <Card3D className="bg-[#111322]/90 backdrop-blur-xl border border-white/10 p-6 md:p-8 rounded-3xl shadow-2xl">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="p-1.5 rounded bg-cyan-500/20 text-cyan-400">
+              <BookOpen size={18} />
+            </span>
+            Choose a Deck
+          </h3>
+          <div className="space-y-3">
+            {FLASHCARD_SETS.map((set) => {
+              const active = activeFlashSetId === set.id;
+              return (
+                <button
+                  key={set.id}
+                  onClick={() => setActiveFlashSetId(set.id)}
+                  className={`w-full text-left px-4 py-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                    active
+                      ? "bg-gradient-to-r from-cyan-500/25 to-blue-500/25 border-cyan-400/70 shadow-[0_0_30px_rgba(56,189,248,0.3)]"
+                      : "bg-[#050612] border-slate-800 hover:border-slate-600"
+                  }`}
+                >
+                  <div>
+                    <p
+                      className={`font-semibold ${
+                        active ? "text-white" : "text-slate-200"
+                      }`}
+                    >
+                      {set.title}
+                    </p>
+                    <p className="text-xs text-slate-400">{set.subtitle}</p>
+                  </div>
+                  <div
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                      active
+                        ? "bg-black/60 text-cyan-300"
+                        : "bg-slate-900 text-slate-400"
+                    }`}
+                  >
+                    {set.cards.length} cards
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card3D>
+
+        {/* flip card area */}
+        <div className="flex flex-col gap-4">
+          <Card3D className="relative bg-[#111322]/90 backdrop-blur-xl border border-white/10 p-4 md:p-6 rounded-3xl shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+            <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
+              <span>
+                Deck:{" "}
+                <span className="text-cyan-300 font-semibold">
+                  {activeFlashSet.title}
+                </span>
+              </span>
+              <span className="font-mono">
+                Card {flashCardIndex + 1} / {activeFlashSet.cards.length}
+              </span>
+            </div>
+
+            <div
+              className="relative h-64 md:h-72 cursor-pointer group [perspective:1200px]"
+              onClick={handleFlashFlip}
+            >
+              <div
+                className={`absolute inset-0 rounded-2xl shadow-2xl border border-white/10 bg-gradient-to-br ${
+                  activeFlashSet.accent
+                } from-20% to-80% overflow-hidden transition-transform duration-500 [transform-style:preserve-3d] ${
+                  flashFlipped ? "[transform:rotateY(180deg)]" : ""
+                }`}
+              >
+                {/* front */}
+                <div className="absolute inset-0 px-6 py-6 md:px-8 md:py-8 flex flex-col justify-between [backface-visibility:hidden]">
+                  <div className="flex items-center justify-between text-xs text-slate-200/70 mb-4">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/20">
+                      <Sparkles size={14} />
+                      Question
+                    </span>
+                    <span className="opacity-80">Click to reveal answer</span>
+                  </div>
+                  <p className="text-lg md:text-xl font-semibold text-white leading-relaxed">
+                    {currentFlashCard.front}
+                  </p>
+                  <div className="flex items-center justify-end mt-4">
+                    <span className="text-xs uppercase tracking-wide text-slate-100/80">
+                      Front Side
+                    </span>
+                  </div>
+                </div>
+
+                {/* back */}
+                <div className="absolute inset-0 px-6 py-6 md:px-8 md:py-8 flex flex-col justify-between bg-[#050610]/90 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                  <div className="flex items-center justify-between text-xs text-slate-200/70 mb-4">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200">
+                      <CheckCircle size={14} />
+                      Answer
+                    </span>
+                    <span className="opacity-80">Click to hide answer</span>
+                  </div>
+                  <p className="text-base md:text-lg text-slate-100 leading-relaxed">
+                    {currentFlashCard.back}
+                  </p>
+                  <div className="flex items-center justify-end mt-4">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">
+                      Back Side
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card3D>
+
+          {/* controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex gap-2">
+              <button
+                onClick={handleFlashPrev}
+                className="px-4 py-2 rounded-full text-sm font-semibold bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-slate-500 transition-all"
+              >
+                Previous
+              </button>
+              <button
+                onClick={handleFlashNext}
+                className="px-4 py-2 rounded-full text-sm font-semibold bg-white text-black hover:bg-cyan-50 transition-all flex items-center gap-1 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+              >
+                Next <ArrowRight size={14} />
+              </button>
+            </div>
+            <button
+              onClick={handleFlashFlip}
+              className="px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-400 hover:to-pink-400 transition-all shadow-[0_0_25px_rgba(168,85,247,0.5)]"
+            >
+              Flip Card
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- root render ---
+
   return (
     <div className="min-h-screen bg-[#0a0a12] text-slate-200 font-sans selection:bg-cyan-500/30 selection:text-cyan-100 overflow-hidden relative">
       <Navbar currentScreen={screen} onNavigate={handleNavigate} />
 
-      {/* Background */}
+      {/* background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px]" />
@@ -739,6 +1139,7 @@ function App() {
         )}
         {screen === "quiz" && renderQuiz()}
         {screen === "result" && renderResult()}
+        {screen === "flashcards" && renderFlashcards()}
       </main>
 
       <style>{`

@@ -68,3 +68,51 @@
   border-radius: 1rem;
   pointer-events: none;
 }
+
+/* --- index.css --- */
+
+/* 1. Animated Background Pattern */
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+}
+
+/* 2. Slow Floating Animation for Orbs */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -50px); }
+  66% { transform: translate(-20px, 20px); }
+}
+
+.animate-float {
+  animation: float 15s ease-in-out infinite;
+}
+
+/* 3. Staggered Entrance Animation */
+@keyframes slideUpFade {
+  from { 
+    opacity: 0; 
+    transform: translateY(40px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+.animate-slide-up {
+  opacity: 0; /* Initially hidden */
+  animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 4. Shimmer Effect for Buttons */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.group:hover .animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}

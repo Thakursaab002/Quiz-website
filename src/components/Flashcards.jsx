@@ -285,7 +285,7 @@ function App() {
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(TIME_PER_QUESTION);
   const [timerId, setTimerId] = useState(null);
@@ -373,6 +373,7 @@ function App() {
         } else {
           throw new Error("No results");
         }
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         // fallback
         setQuestions([
